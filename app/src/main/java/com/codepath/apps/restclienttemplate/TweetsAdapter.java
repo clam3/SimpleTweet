@@ -1,17 +1,30 @@
 package com.codepath.apps.restclienttemplate;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.core.util.Pair;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.MultiTransformation;
+import com.bumptech.glide.load.resource.bitmap.FitCenter;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.codepath.apps.restclienttemplate.models.Tweet;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import org.parceler.Parcels;
 
 import java.util.List;
 
@@ -65,24 +78,74 @@ public class TweetsAdapter extends RecyclerView.Adapter<TweetsAdapter.ViewHolder
     // Define a viewholder
     public class ViewHolder extends RecyclerView.ViewHolder {
 
+        ImageView ivLike;
+        ImageView ivRetweet;
         ImageView ivProfileImage;
         TextView tvBody;
+        TextView tvName;
         TextView tvScreenName;
         TextView tvTimeStamp;
+        TextView tvLikeCount;
+        TextView tvReplyCount;
+        TextView tvRetweetCount;
+        FloatingActionButton fabCompose;
+        RelativeLayout container;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            ivLike = itemView.findViewById(R.id.ivLike);
+            ivRetweet = itemView.findViewById(R.id.ivRetweet);
             ivProfileImage = itemView.findViewById(R.id.ivProfileImage);
             tvBody = itemView.findViewById(R.id.tvBody);
+            tvName = itemView.findViewById(R.id.tvName);
             tvScreenName = itemView.findViewById(R.id.tvScreenName);
             tvTimeStamp = itemView.findViewById(R.id.tvTimeStamp);
+            tvLikeCount = itemView.findViewById(R.id.tvLikeCount);
+            tvReplyCount = itemView.findViewById(R.id.tvReplyCount);
+            tvRetweetCount = itemView.findViewById(R.id.tvRetweetCount);
+            fabCompose = itemView.findViewById(R.id.fabCompose);
+            container = itemView.findViewById(R.id.container);
         }
 
-        public void bind(Tweet tweet) {
+        public void bind(final Tweet tweet) {
             tvBody.setText(tweet.body);
-            tvScreenName.setText(tweet.user.screenName);
+            tvName.setText(tweet.userName);
+            tvScreenName.setText("@" + tweet.userScreenName);
             tvTimeStamp.setText(tweet.getFormattedTimestamp());
-            Glide.with(context).load(tweet.user.profileImageUrl).into(ivProfileImage);
+            if (tweet.likeCount >0) {
+                tvLikeCount.setText(String.valueOf(tweet.likeCount));
+            }
+            if (tweet.retweetCount > 0){
+                tvRetweetCount.setText(String.valueOf(tweet.retweetCount));
+            }
+            if (tweet.liked) {
+                //ivLike.setColorFilter(ContextCompat.getColor(context, R.color.twitter_blue_30), android.graphics.PorterDuff.Mode.SRC_IN);
+                DrawableCompat.setTint(ivLike.getDrawable(), ContextCompat.getColor(context, R.color.twitter_blue_30));
+            }
+            if (tweet.retweeted) {
+                ivRetweet.setColorFilter(ContextCompat.getColor(context, R.color.twitter_blue_30), android.graphics.PorterDuff.Mode.SRC_IN);
+            }
+            //tvReplyCount.setText(String.valueOf(tweet.replyCount));//.publicMetrics.replyCount));
+            Glide.with(context).load(tweet.userProfileImageUrl)
+                    .transform(new MultiTransformation(new FitCenter(), new RoundedCorners(10)))
+                    .into(ivProfileImage);
+            container.setOnClickListener(new View.OnClickListener() {
+                     @Override
+                     public void onClick(View view) {
+                         // 2. Navigate to a new activity on tap
+                         //Toast.makeText(context, tweet.user.name, Toast.LENGTH_SHORT).show();
+                         Intent i = new Intent(context, DetailActivity.class);
+                         Pair<View, String> p1 = Pair.create((View)tvName, "name");
+                         Pair<View, String> p2 = Pair.create((View)ivProfileImage, "profileImage");
+                         Pair<View, String> p3 = Pair.create((View)tvScreenName, "screenName");
+                         ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation((Activity) context, p1, p2, p3);
+                         i.putExtra("tweet", Parcels.wrap(tweet));
+                         context.startActivity(i, options.toBundle());
+//                    Toast.makeText(context, movie.getTitle(), Toast.LENGTH_SHORT).show();
+                     }
+                 }
+            );
+
         }
     }
 }
